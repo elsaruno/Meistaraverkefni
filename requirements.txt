@@ -1,0 +1,6 @@
+asyncio
+bleak
+#tk
+numpy
+matplotlib
+quaternionic
