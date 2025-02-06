@@ -1,4 +1,4 @@
-from tkinter import LabelFrame,Frame,Label, Button, DISABLED,messagebox
+from tkinter import LabelFrame,Frame,Label, Button, DISABLED,messagebox, StringVar, OptionMenu
 from tkinter import TclError
 from matplotlib.pyplot import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
@@ -10,6 +10,7 @@ import numpy as np
 style.use("dark_background")
 from ui_components import assign_sensor_window as asw
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -52,11 +53,21 @@ class PlotFrame(LabelFrame):
         self.start_stop_frame.grid(row=1, column=0, columnspan=7, sticky="nsew")
         self.start_button = Button(self.start_stop_frame, text="Start Measuring", command=lambda: self.start_measuring_for_sensors())
         self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="nsw")
-        self.start_button.configure(bg="blue", fg="white")
+        self.start_button.configure(bg="blue", fg="black")
 
         self.stop_button = Button(self.start_stop_frame, text="Stop Measuring", command=lambda: self.stop_measuring_for_sensors())
         self.stop_button.grid(row=1, column=1, padx=5, pady=5, sticky="nsw")
-        self.stop_button.configure(bg="orange", fg="white")
+        self.stop_button.configure(bg="orange", fg="black")
+
+        self.timestamp_button = Button(self.start_stop_frame, text="Mark Timestamp", command=lambda: self.save_timestamp())
+        self.timestamp_button.grid(row=1, column=2, padx=5, pady=5, sticky="nsw")
+        self.timestamp_button.configure(bg="green", fg="black")
+
+        
+        # Dropdown menu for choosing the shape
+        self.shape_choice = StringVar(value="circle")  # Default value
+        self.shape_dropdown = OptionMenu(self.start_stop_frame, self.shape_choice, "circle", "infinity", "2/4")
+        self.shape_dropdown.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         # figures
         self.projected_angles = Figure()
@@ -77,21 +88,40 @@ class PlotFrame(LabelFrame):
         self.circle_y = 30 * np.cos(np.linspace(0, 2 * np.pi, 100))
 
         # try and draw a figure of 8 / infinity symbol
-        t = np.linspace(0, 2 * np.pi, 100)  # 100 ensures a smooth shape
+        # t = np.linspace(0, 2 * np.pi, 100)  # 100 ensures a smooth shape
 
-        # ammend these so to make the shape what you want
-        x = 50 * np.sin(t)
-        y = 50 * np.sin(t) * np.cos(t) * 1.2
+        # # ammend these so to make the shape what you want
+        # x = 50 * np.sin(t)
+        # y = 50 * np.sin(t) * np.cos(t) * 1.2
 
-        # Create a path for the figure of eight
-        vertices = np.column_stack([x, y])
+        # # Create a path for the figure of eight
+        # vertices = np.column_stack([x, y])
+        # codes = [Path.MOVETO] + [Path.LINETO] * (len(vertices) - 1)
+        # figure_of_eight_path = Path(vertices, codes)
+        # figure_of_eight_patch = patches.PathPatch(figure_of_eight_path, edgecolor='orange', facecolor='none', linewidth=2)
+
+        # # Add the patch to the axes
+        # self.ax_proj.add_patch(figure_of_eight_patch)
+        #TODO: Virkar til að sýna trajectory en kemur öfugt
+        script_dir = os.path.dirname(__file__)
+        file_x_path = os.path.join(script_dir, "trajectory_x.txt")
+        file_y_path = os.path.join(script_dir, "trajectory_y.txt")
+        file_x = open(file_x_path, "r")
+        self.trajectory_x = file_x.read().splitlines()
+        file_y = open(file_y_path, "r")
+        self.trajectory_y = file_y.read().splitlines()
+
+        #reverse the array so the trajectory is shown in the right direction when added to stack
+        #self.trajectory_x.reverse()
+        #self.trajectory_y.reverse()
+
+        vertices = np.column_stack([self.trajectory_x, self.trajectory_y])
         codes = [Path.MOVETO] + [Path.LINETO] * (len(vertices) - 1)
         figure_of_eight_path = Path(vertices, codes)
         figure_of_eight_patch = patches.PathPatch(figure_of_eight_path, edgecolor='orange', facecolor='none', linewidth=2)
 
         # Add the patch to the axes
         self.ax_proj.add_patch(figure_of_eight_patch)
-
         self.projected_angles_canvas = FigureCanvasTkAgg(self.projected_angles, master=self)
         self.projected_angles_canvas.get_tk_widget().grid(row=2, column=0, columnspan=2, sticky='nsew', padx=5, pady=5)
 
