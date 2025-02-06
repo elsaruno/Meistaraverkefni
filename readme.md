@@ -4,7 +4,7 @@ python version:  Python 3.7.13 - python --version
 git clone https://github.com/mcrooks83/rs-desktop.git
 pip3 install -r requirements.txt
 python gui.py
-
+Ensure to have python version that is configured for tk installed
 ## 
 
 The Right Step desktop application is a python based software solution that allows users to connect to a “Movella Dot' (Dot) and observe the orientation, 3D acceleration and a projected xy coordinate view of the  yaw and pitch angles. 
