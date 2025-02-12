@@ -181,6 +181,14 @@ class SensorManager(SDK):
                         s.append_timestamp_prev_timestamp()
                 else:
                     print("no connected sensors to append space bar key press")
+                    
+            elif msg["message"] == "timestamp_button_pressed":
+                print("timestamp button pressed")
+                if len(self.get_connected_sensors())>0:
+                    for s in self.get_connected_sensors():
+                        s.append_timestamp_prev_timestamp()
+                else:
+                    print("no connected sensors to append timestamp button press")
 
             #Scanning for sensors
             elif msg["message"] == "scan":

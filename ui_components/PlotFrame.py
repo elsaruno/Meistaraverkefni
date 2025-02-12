@@ -88,11 +88,11 @@ class PlotFrame(LabelFrame):
         self.circle_y = 30 * np.cos(np.linspace(0, 2 * np.pi, 100))
 
         # try and draw a figure of 8 / infinity symbol
-        # t = np.linspace(0, 2 * np.pi, 100)  # 100 ensures a smooth shape
+        t = np.linspace(0, 2 * np.pi, 100)  # 100 ensures a smooth shape
 
         # # ammend these so to make the shape what you want
-        # x = 50 * np.sin(t)
-        # y = 50 * np.sin(t) * np.cos(t) * 1.2
+        self.infinity_x = 50 * np.sin(t)
+        self.infinity_y = 50 * np.sin(t) * np.cos(t) * 1.2
 
         # # Create a path for the figure of eight
         # vertices = np.column_stack([x, y])
@@ -199,6 +199,11 @@ class PlotFrame(LabelFrame):
     def get_sensors_in_plot_frame(self):
         return len(self.connected_sensor_actions)
 
+    #TODO: ATH afh þetta er ekki að virka
+    def save_timestamp(self):
+        print("saving timestamp")
+        self.s.manager.send_message("timestamp_button_pressed", {})
+        self.console_frame.insert_text(f"timestamp saved ..." + '\n\n')
 
     def dectect_key_press(self, event):
         #<KeyPress event keysym=space keycode=822083616 char=' ' x=256 y=222>
@@ -232,10 +237,29 @@ class PlotFrame(LabelFrame):
         self.ax_proj.yaxis.set_ticks_position('left')
         self.ax_proj.autoscale(False)
 
+        #Determine which shape to draw
+        if self.shape_choice.get() == "circle":
+            shape_x = self.circle_x
+            shape_y = self.circle_y
+        elif self.shape_choice.get() == "infinity":
+            shape_x = self.infinity_x
+            shape_y = self.infinity_y
+        elif self.shape_choice.get() == "2/4":
+            shape_x = self.pattern_2_4_x
+            shape_y = self.pattern_2_4_y
+        elif self.shape_choice.get() == "3/4":
+            shape_x = self.pattern_3_4_x
+            shape_y = self.pattern_3_4_y
+        elif self.shape_choice.get() == "4/4":
+            shape_x = self.pattern_4_4_x
+            shape_y = self.pattern_4_4_y
+        else:
+            shape_x, shape_y = [], []
+
     # Add the next point from full circle to the traced path
-        if self.current_idx < len(self.circle_x):
-            self.traced_x.append(self.circle_x[self.current_idx])
-            self.traced_y.append(self.circle_y[self.current_idx])
+        if self.current_idx < len(shape_x):
+            self.traced_x.append(shape_x[self.current_idx])
+            self.traced_y.append(shape_y[self.current_idx])
             self.current_idx += 1
         else:
         # Reset the traced path to start the effect again (disappear and reform)
