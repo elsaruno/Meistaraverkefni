@@ -85,7 +85,7 @@ class ScanSensorFrame(LabelFrame):
         connected_sensor_address_label.identifier = "address"
 
         connected_sensor_identity_button = Button(self.plot_frame.connected_sensor_frame, text="identify", command= lambda: self.plot_frame.identify_sensor(sensor.address))
-        connected_sensor_identity_button.configure(bg="red", fg="white")
+        connected_sensor_identity_button.configure(bg="red", fg="black")
         connected_sensor_identity_button.grid(row=num_of_sensors+1, column=1, padx=5,pady=5, sticky="nsw")
         connected_sensor_identity_button.identifier = "indentify_btn"
         sensor_actions["identify_button"] = connected_sensor_identity_button

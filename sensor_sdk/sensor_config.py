@@ -65,7 +65,7 @@ sensor_types = {
             "payloads":[
                 {
                     "name": "CUSTOM_PAYLOAD_5",
-                    "csv_header" : ["timestamp", "q_w", "q_x", "q_y", "q_z", "acc_x", "acc_y", "acc_z", "gyr_x", "gyr_y", "gyr_z", "timastamp_marked" ],
+                    "csv_header" : ["timestamp", "q_w", "q_x", "q_y", "q_z", "acc_x", "acc_y", "acc_z", "gyr_x", "gyr_y", "gyr_z", "timestamp_marked" ],
                     "payload_size": payload_sizes["long"] 
 
                 }

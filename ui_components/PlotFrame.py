@@ -51,22 +51,27 @@ class PlotFrame(LabelFrame):
 
         self.start_stop_frame = Frame(self)
         self.start_stop_frame.grid(row=1, column=0, columnspan=7, sticky="nsew")
-        self.start_button = Button(self.start_stop_frame, text="Start Measuring", command=lambda: self.start_measuring_for_sensors())
-        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="nsw")
+
+        self.streaming_button = Button(self.start_stop_frame, text="Start Streaming", command=lambda: self.start_measuring_for_sensors())
+        self.streaming_button.grid(row=1, column=0, padx=5, pady=5, sticky="nsw")
+        self.streaming_button.configure(bg="green", fg="black")
+
+        self.start_button = Button(self.start_stop_frame, text="Start Measuring", command=lambda: self.start_plotting())
+        self.start_button.grid(row=1, column=1, padx=5, pady=5, sticky="nsw")
         self.start_button.configure(bg="blue", fg="black")
 
         self.stop_button = Button(self.start_stop_frame, text="Stop Measuring", command=lambda: self.stop_measuring_for_sensors())
-        self.stop_button.grid(row=1, column=1, padx=5, pady=5, sticky="nsw")
+        self.stop_button.grid(row=1, column=2, padx=5, pady=5, sticky="nsw")
         self.stop_button.configure(bg="orange", fg="black")
 
         self.timestamp_button = Button(self.start_stop_frame, text="Mark Timestamp", command=lambda: self.save_timestamp())
-        self.timestamp_button.grid(row=1, column=2, padx=5, pady=5, sticky="nsw")
-        self.timestamp_button.configure(bg="green", fg="black")
+        self.timestamp_button.grid(row=1, column=3, padx=5, pady=5, sticky="nsw")
+        self.timestamp_button.configure(bg="purple", fg="black")
 
         
         # Dropdown menu for choosing the shape
         self.shape_choice = StringVar(value="circle")  # Default value
-        self.shape_dropdown = OptionMenu(self.start_stop_frame, self.shape_choice, "circle", "infinity", "2/4")
+        self.shape_dropdown = OptionMenu(self.start_stop_frame, self.shape_choice, "circle", "infinity", "trajectory")
         self.shape_dropdown.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         # figures
@@ -82,6 +87,7 @@ class PlotFrame(LabelFrame):
         self.ax_proj.xaxis.set_ticks_position('bottom')
         self.ax_proj.yaxis.set_ticks_position('left')
         self.ax_proj.autoscale(True)
+        self.ax_proj.text(0.5, 1.1, 'Welcome, to begin connect the sensor and press start streaming button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
 
         # try and draw a circle
         self.circle_x = 30 * np.sin(np.linspace(0, 2 * np.pi, 100))
@@ -107,9 +113,12 @@ class PlotFrame(LabelFrame):
         file_x_path = os.path.join(script_dir, "trajectory_x.txt")
         file_y_path = os.path.join(script_dir, "trajectory_y.txt")
         file_x = open(file_x_path, "r")
-        self.trajectory_x = file_x.read().splitlines()
+        trajectory_x = file_x.read().splitlines()
+        self.trajectory_x = np.array(trajectory_x, dtype=float)
         file_y = open(file_y_path, "r")
-        self.trajectory_y = file_y.read().splitlines()
+        trajectory_y = file_y.read().splitlines()
+        self.trajectory_y = np.array(trajectory_y, dtype=float)
+        self.trajectory_y = -self.trajectory_y
 
         #reverse the array so the trajectory is shown in the right direction when added to stack
         #self.trajectory_x.reverse()
@@ -199,7 +208,6 @@ class PlotFrame(LabelFrame):
     def get_sensors_in_plot_frame(self):
         return len(self.connected_sensor_actions)
 
-    #TODO: ATH afh þetta er ekki að virka
     def save_timestamp(self):
         print("saving timestamp")
         self.s.manager.send_message("timestamp_button_pressed", {})
@@ -236,7 +244,7 @@ class PlotFrame(LabelFrame):
         self.ax_proj.xaxis.set_ticks_position('bottom')
         self.ax_proj.yaxis.set_ticks_position('left')
         self.ax_proj.autoscale(False)
-
+        self.ax_proj.text(0.5, 1.1, 'Now follow the trajectory', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
         #Determine which shape to draw
         if self.shape_choice.get() == "circle":
             shape_x = self.circle_x
@@ -244,15 +252,14 @@ class PlotFrame(LabelFrame):
         elif self.shape_choice.get() == "infinity":
             shape_x = self.infinity_x
             shape_y = self.infinity_y
-        elif self.shape_choice.get() == "2/4":
-            shape_x = self.pattern_2_4_x
-            shape_y = self.pattern_2_4_y
-        elif self.shape_choice.get() == "3/4":
-            shape_x = self.pattern_3_4_x
-            shape_y = self.pattern_3_4_y
-        elif self.shape_choice.get() == "4/4":
-            shape_x = self.pattern_4_4_x
-            shape_y = self.pattern_4_4_y
+        elif self.shape_choice.get() == "trajectory":
+            shape_x = self.trajectory_x
+            shape_y = self.trajectory_y
+            print("Trajectory selected")
+            #print(f"shape_x: {shape_x}")
+            #print(f"shape_y: {shape_y}")
+            print(f"len of x: {len(shape_x)}")
+            print(f"len of y: {len(shape_y)}")
         else:
             shape_x, shape_y = [], []
 
@@ -361,13 +368,17 @@ class PlotFrame(LabelFrame):
             #start_measuring_all
             self.s.manager.send_message("start_measuring_all", {})
             self.console_frame.clear_console()
-            self.console_frame.insert_text(f"start measuring ..." + '\n\n') 
-            self.update_stream_plot()
+            self.console_frame.insert_text(f"start streaming ..." + '\n\n') 
+            #self.update_stream_plot()
         else:
             if len(self.connected_sensor_actions) == 0:
                 messagebox.showinfo("Alert", "There are no connected sensors")
             else:
                 messagebox.showinfo("Alert", "All sensors are NOT assigned")
+    
+    def start_plotting(self):
+        self.console_frame.insert_text(f"start measuring  ..." + '\n\n')
+        self.update_stream_plot()
     
     def stop_measuring_for_sensors(self):
         print(f"stop measuring for sensors")

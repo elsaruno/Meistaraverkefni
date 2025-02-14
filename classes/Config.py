@@ -66,8 +66,8 @@ class SensorModel:
         #  Units don't really matter just be consistent and use the same units in the vector/point values above. 
         #  Use a measuring tape.
         # By "canvas" we mean within the software context (what you pass in to the plot method)
-        self.window_width_physical = 55
-        self.window_height_physical = 23
+        self.window_width_physical = 31 #55
+        self.window_height_physical = 22 #23
         self.window_width_canvas = 50 * 2
         self.window_height_canvas = 50 * 2
 
