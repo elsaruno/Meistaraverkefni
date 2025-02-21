@@ -91,6 +91,11 @@ class Config:
         self.x_ref = 0
         self.y_ref = 0
         
+        # Controls the refresh rate and the animation
+        self.animation_length = 10000 # ms
+        self.update_interval = 20 # ms ... 20 ms = 50Hz
+        self.max_sensor_points_to_show = 120 # Shows only this many of the latest sensor points. Set to 0 to disable
+        
         ### Specifics for the "quaternion" transformation mode ###
         self.sensor_model = SensorModel('free')
     

@@ -30,6 +30,7 @@ class PlotFrame(LabelFrame):
 
         self.list_of_timestamps = []
         self.connected_sensor_positions = {}
+        self.timestamp_counter = 0
 
         self.grid_rowconfigure((2,), weight=1)
         self.grid_columnconfigure((0, 1), weight=1)  # Column weight
@@ -74,6 +75,10 @@ class PlotFrame(LabelFrame):
         self.shape_dropdown = OptionMenu(self.start_stop_frame, self.shape_choice, "circle", "infinity", "trajectory")
         self.shape_dropdown.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
+        self.difficulty_level = StringVar(value="easy")  # Default value
+        self.difficulty_dropdown = OptionMenu(self.start_stop_frame, self.difficulty_level, "easy", "medium", "hard")
+        self.difficulty_dropdown.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+
         # figures
         self.projected_angles = Figure()
         self.ax_proj = self.projected_angles.subplots()
@@ -87,7 +92,14 @@ class PlotFrame(LabelFrame):
         self.ax_proj.xaxis.set_ticks_position('bottom')
         self.ax_proj.yaxis.set_ticks_position('left')
         self.ax_proj.autoscale(True)
-        self.ax_proj.text(0.5, 1.1, 'Welcome, to begin connect the sensor and press start streaming button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+        if self.timestamp_counter == 0:
+            self.ax_proj.text(0.5, 1.1, 'Welcome, to begin connect the sensor and press start streaming button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+        elif self.timestamp_counter == 1:
+            self.ax_proj.texts.clear()
+            self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+        elif self.timestamp_counter == 2:
+            self.ax_proj.texts.clear()
+            self.ax_proj.text(0.5, 1.1, 'Now place the sensor and raise the hand as high as you can but not higher than 90°C and press start measuring', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
 
         # try and draw a circle
         self.circle_x = 30 * np.sin(np.linspace(0, 2 * np.pi, 100))
@@ -120,9 +132,8 @@ class PlotFrame(LabelFrame):
         self.trajectory_y = np.array(trajectory_y, dtype=float)
         self.trajectory_y = -self.trajectory_y
 
-        #reverse the array so the trajectory is shown in the right direction when added to stack
-        #self.trajectory_x.reverse()
-        #self.trajectory_y.reverse()
+        self.trajectory_x = self.trajectory_x * 70
+        self.trajectory_y = self.trajectory_y * 70
 
         vertices = np.column_stack([self.trajectory_x, self.trajectory_y])
         codes = [Path.MOVETO] + [Path.LINETO] * (len(vertices) - 1)
@@ -210,12 +221,35 @@ class PlotFrame(LabelFrame):
 
     def save_timestamp(self):
         print("saving timestamp")
+        self.timestamp_counter += 1
         self.s.manager.send_message("timestamp_button_pressed", {})
         self.console_frame.insert_text(f"timestamp saved ..." + '\n\n')
+
+        # Clear previous text and update it
+        self.ax_proj.cla()  # Clear axis to remove old text
+        self.ax_proj.set_title("Projected Pitch and Yaw")  # Reset title
+        self.ax_proj.set_xlim(-50, 50)
+        self.ax_proj.set_ylim(-50, 50)
+        self.ax_proj.spines['left'].set_position('center')
+        self.ax_proj.spines['bottom'].set_position('center')
+        self.ax_proj.spines['right'].set_color('none')
+        self.ax_proj.spines['top'].set_color('none')
+        self.ax_proj.xaxis.set_ticks_position('bottom')
+        self.ax_proj.yaxis.set_ticks_position('left')
+
+        if self.timestamp_counter == 1:
+            self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button',
+                            transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+        elif self.timestamp_counter == 2:
+            self.ax_proj.text(0.5, 1.1, 'Now place the sensor and raise the hand as high as you can but not higher than 90° and press start measuring',
+                            transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+        # Redraw canvas
+        self.projected_angles_canvas.draw()
 
     def dectect_key_press(self, event):
         #<KeyPress event keysym=space keycode=822083616 char=' ' x=256 y=222>
         if(event.keysym == "space"):
+            self.timestamp_counter += 1
             self.s.manager.send_message("space_key_pressed", {})
             # send a message to the sensor manager?
             #save a timestamp for both sensors
@@ -255,11 +289,6 @@ class PlotFrame(LabelFrame):
         elif self.shape_choice.get() == "trajectory":
             shape_x = self.trajectory_x
             shape_y = self.trajectory_y
-            print("Trajectory selected")
-            #print(f"shape_x: {shape_x}")
-            #print(f"shape_y: {shape_y}")
-            print(f"len of x: {len(shape_x)}")
-            print(f"len of y: {len(shape_y)}")
         else:
             shape_x, shape_y = [], []
 
@@ -287,9 +316,18 @@ class PlotFrame(LabelFrame):
 
     # Redraw the canvas
         self.projected_angles_canvas.draw()
-
+    
+    # set the time between updates on the plot (difficulty level)
+        diff_level = 0
+        if self.difficulty_level.get() == "easy":
+            diff_level = 350
+        if self.difficulty_level.get() == "medium":
+            diff_level = 200
+        if self.difficulty_level.get() == "hard":
+            diff_level = 50
+        
     # Recursively call this function for continuous updates
-        self.update_stream_plot_task_id = self.after(200, self.update_stream_plot)  # Adjust speed here
+        self.update_stream_plot_task_id = self.after(diff_level, self.update_stream_plot)  # Adjust speed here
     
 
     # Rest of your original code is unchanged...
@@ -355,6 +393,28 @@ class PlotFrame(LabelFrame):
 
     def start_measuring_for_sensors(self):
         self.focus_set()
+        self.timestamp_counter = 1  # Reset timestamp counter
+
+        # Update the plot text
+        self.ax_proj.cla()
+        self.ax_proj.set_title("Projected Pitch and Yaw")
+        self.ax_proj.set_xlim(-50, 50)
+        self.ax_proj.set_ylim(-50, 50)
+        self.ax_proj.spines['left'].set_position('center')
+        self.ax_proj.spines['bottom'].set_position('center')
+        self.ax_proj.spines['right'].set_color('none')
+        self.ax_proj.spines['top'].set_color('none')
+        self.ax_proj.xaxis.set_ticks_position('bottom')
+        self.ax_proj.yaxis.set_ticks_position('left')
+
+        if self.timestamp_counter == 1:
+            self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button',
+                            transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+        elif self.timestamp_counter == 2:
+            self.ax_proj.text(0.5, 1.1, 'Now place the sensor and raise the hand as high as you can but not higher than 90° and press start measuring',
+                            transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+
+        self.projected_angles_canvas.draw()
         #print(f"start measuring for sensor {address}")
         if len(self.connected_sensor_actions) == 0:
             all_sensors_are_placed = False
