@@ -309,10 +309,14 @@ class PlotFrame(LabelFrame):
         sensors_to_plot = self.s.manager.get_connected_sensors()
 
         for idx, s in enumerate(sensors_to_plot):
-           projected_yaw = s.get_projected_yaw()
-           projected_pitch = s.get_projected_pitch()
-           color = colors[idx]
-           self.ax_proj.plot(projected_yaw, projected_pitch, color=color)
+            projected_yaw = s.get_projected_yaw()
+            projected_pitch = s.get_projected_pitch()
+            color = colors[idx]
+            N = self.c.max_sensor_points_to_show
+            if len(projected_pitch) > N:
+                self.ax_proj.plot(projected_yaw[-N:], projected_pitch[-N:], color=color)
+            else:
+                self.ax_proj.plot(projected_yaw, projected_pitch, color=color)
 
     # Redraw the canvas
         self.projected_angles_canvas.draw()
