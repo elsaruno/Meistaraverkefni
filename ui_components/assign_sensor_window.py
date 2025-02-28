@@ -33,15 +33,18 @@ class AssignSensorWindow(Toplevel):
         self.placement_select.bind("<<ComboboxSelected>>", self.on_placement_select)
         self.placement_select.grid(row=1, column=0, padx=20, pady=5, sticky="nsew")
         self.placement_select.set(self.params.get_placements()[0])
+        self.placement_select.current(0)
 
         self.assignment_ref = assignment_ref
+
+        self.on_placement_select(None)
         
         self.close_button = Button(self, text= "close", command=self.on_close_button_press)
         self.close_button.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
     
     def on_placement_select(self, placement):
         placement = self.placement_select.get()
-        print(f"{placement}")
+        print(f"Placement: {placement}")
         self.assignment_ref(self.address, placement)
         self.assigned_label = Label(self, text=f"Assigned to {placement}")
         self.assigned_label.grid(row=2, column=0,padx=5, pady=5, sticky="nsew")

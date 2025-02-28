@@ -82,15 +82,18 @@ class PlotFrame(LabelFrame):
         # figures
         self.projected_angles = Figure()
         self.ax_proj = self.projected_angles.subplots()
-        self.ax_proj.set_title(f"Projected Pitch and Yaw")
-        self.ax_proj.set_xlim(-50, 50)
-        self.ax_proj.set_ylim(-50, 50)
-        self.ax_proj.spines['left'].set_position('center')
-        self.ax_proj.spines['bottom'].set_position('center')
-        self.ax_proj.spines['right'].set_color('none')
-        self.ax_proj.spines['top'].set_color('none')
-        self.ax_proj.xaxis.set_ticks_position('bottom')
-        self.ax_proj.yaxis.set_ticks_position('left')
+        #self.ax_proj.set_title(f"Projected Pitch and Yaw")
+        #self.ax_proj.set_xlim(-50, 50)
+        #self.ax_proj.set_ylim(-50, 50)
+        # self.ax_proj.spines['left'].set_position('center')
+        # self.ax_proj.spines['bottom'].set_position('center')
+        # self.ax_proj.spines['right'].set_color('none')
+        # self.ax_proj.spines['top'].set_color('none')
+        # self.ax_proj.spines['left'].set_color('none')
+        # self.ax_proj.spines['bottom'].set_color('none')
+        # self.ax_proj.xaxis.set_ticks_position('bottom')
+        # self.ax_proj.yaxis.set_ticks_position('left')
+        self.ax_proj.axis('off')
         self.ax_proj.autoscale(True)
         if self.timestamp_counter == 0:
             self.ax_proj.text(0.5, 1.1, 'Welcome, to begin connect the sensor and press start streaming button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
@@ -227,7 +230,7 @@ class PlotFrame(LabelFrame):
 
         # Clear previous text and update it
         self.ax_proj.cla()  # Clear axis to remove old text
-        self.ax_proj.set_title("Projected Pitch and Yaw")  # Reset title
+        #self.ax_proj.set_title("Projected Pitch and Yaw")  # Reset title
         self.ax_proj.set_xlim(-50, 50)
         self.ax_proj.set_ylim(-50, 50)
         self.ax_proj.spines['left'].set_position('center')
@@ -401,7 +404,7 @@ class PlotFrame(LabelFrame):
 
         # Update the plot text
         self.ax_proj.cla()
-        self.ax_proj.set_title("Projected Pitch and Yaw")
+        #self.ax_proj.set_title("Projected Pitch and Yaw")
         self.ax_proj.set_xlim(-50, 50)
         self.ax_proj.set_ylim(-50, 50)
         self.ax_proj.spines['left'].set_position('center')
