@@ -82,19 +82,17 @@ class PlotFrame(LabelFrame):
         # figures
         self.projected_angles = Figure()
         self.ax_proj = self.projected_angles.subplots()
-        #self.ax_proj.set_title(f"Projected Pitch and Yaw")
-        #self.ax_proj.set_xlim(-50, 50)
-        #self.ax_proj.set_ylim(-50, 50)
-        # self.ax_proj.spines['left'].set_position('center')
-        # self.ax_proj.spines['bottom'].set_position('center')
-        # self.ax_proj.spines['right'].set_color('none')
-        # self.ax_proj.spines['top'].set_color('none')
-        # self.ax_proj.spines['left'].set_color('none')
-        # self.ax_proj.spines['bottom'].set_color('none')
-        # self.ax_proj.xaxis.set_ticks_position('bottom')
-        # self.ax_proj.yaxis.set_ticks_position('left')
-        self.ax_proj.axis('off')
-        self.ax_proj.autoscale(True)
+        self.ax_proj.set_title(f"Projected Pitch and Yaw")
+        self.ax_proj.set_xlim(-50, 50)
+        self.ax_proj.set_ylim(-50, 50)
+        self.ax_proj.spines['left'].set_position('center')
+        self.ax_proj.spines['bottom'].set_position('center')
+        self.ax_proj.spines['right'].set_color('none')
+        self.ax_proj.spines['top'].set_color('none')
+        self.ax_proj.xaxis.set_ticks_position('bottom')
+        self.ax_proj.yaxis.set_ticks_position('left')
+        #self.ax_proj.axis('off')
+        self.ax_proj.autoscale(False)
         if self.timestamp_counter == 0:
             self.ax_proj.text(0.5, 1.1, 'Welcome, to begin connect the sensor and press start streaming button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
         elif self.timestamp_counter == 1:
@@ -239,6 +237,7 @@ class PlotFrame(LabelFrame):
         self.ax_proj.spines['top'].set_color('none')
         self.ax_proj.xaxis.set_ticks_position('bottom')
         self.ax_proj.yaxis.set_ticks_position('left')
+        self.ax_proj.autoscale(False)
 
         if self.timestamp_counter == 1:
             self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button',
@@ -413,6 +412,7 @@ class PlotFrame(LabelFrame):
         self.ax_proj.spines['top'].set_color('none')
         self.ax_proj.xaxis.set_ticks_position('bottom')
         self.ax_proj.yaxis.set_ticks_position('left')
+        self.ax_proj.autoscale(False)
 
         if self.timestamp_counter == 1:
             self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button',
@@ -445,6 +445,10 @@ class PlotFrame(LabelFrame):
     
     def start_plotting(self):
         self.console_frame.insert_text(f"start measuring  ..." + '\n\n')
+        #TODO: savea gögn áður en við eyðum þeim og includea í csv
+        # Reset sensor data when measurement starts
+        for s in self.s.manager.get_connected_sensors():
+            s.clear_all_data()
         self.update_stream_plot()
     
     def stop_measuring_for_sensors(self):

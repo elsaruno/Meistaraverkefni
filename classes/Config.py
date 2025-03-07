@@ -22,7 +22,7 @@ class SensorModel:
             self.o_global = point(0,0,0)
             self.p_beam = self.o_global
             self.v_beam = unit_vec(1,0,0)
-            self.o_window = self.p_beam + vector(60,0,0)
+            self.o_window = self.p_beam + vector(25,0,0)
             self.u_window = unit_vec(0,-1,0)
             self.v_window = unit_vec(0,0,1)
 
@@ -66,8 +66,8 @@ class SensorModel:
         #  Units don't really matter just be consistent and use the same units in the vector/point values above. 
         #  Use a measuring tape.
         # By "canvas" we mean within the software context (what you pass in to the plot method)
-        self.window_width_physical = 31 #55
-        self.window_height_physical = 22 #23
+        self.window_width_physical = 17#31 #55
+        self.window_height_physical = 10#22 #23
         self.window_width_canvas = 50 * 2
         self.window_height_canvas = 50 * 2
 

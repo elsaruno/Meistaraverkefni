@@ -66,7 +66,6 @@ ExternalQuaternion = Tuple[float, float, float, float] # w,x,y,z
 Transform = Callable[[ExternalQuaternion], Tuple[float, float]]
 
 
-
 def create_transform(_q_rg: ExternalQuaternion, s: SensorModel) -> Transform:
     q_rg = quaternionic.array(_q_rg)
     beam_origin = s.p_beam
@@ -83,6 +82,7 @@ def create_transform(_q_rg: ExternalQuaternion, s: SensorModel) -> Transform:
         q_tg = quaternionic.array(_q)
         v_tg = rotate_vec(beam_vec, q_tg)
         p_tg = rotate_vec(beam_origin, q_tg)
+        #TODO: Þetta er til að þvinga í 0,0, bæta x og y í export fileið 
         p = line_plane_intersection(p_tg, v_tg, plane_o, plane_u, plane_v)
         if p is None:
             return [0,0]
