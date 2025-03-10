@@ -1,4 +1,4 @@
-from tkinter import LabelFrame,Frame,Label, Button, DISABLED,messagebox, StringVar, OptionMenu
+from tkinter import LabelFrame,Frame,Label, Button, DISABLED,messagebox, StringVar, OptionMenu, ttk
 from tkinter import TclError
 from matplotlib.pyplot import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
@@ -11,6 +11,9 @@ style.use("dark_background")
 from ui_components import assign_sensor_window as asw
 import logging
 import os
+import importlib
+from sensor_sdk.shape_config import set_shape_choice, get_shape_choice
+from classes.length_from_screen_config import set_length_from_screen, get_length_from_screen
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +30,10 @@ class PlotFrame(LabelFrame):
         self.max_pitch = 0
         self.max_yaw = 0
         self.configure(text="Visualisation",)
+        self.projected_x = []
+        self.projected_y = []
+        self.real_x = []
+        self.real_y = []
 
         self.list_of_timestamps = []
         self.connected_sensor_positions = {}
@@ -71,13 +78,31 @@ class PlotFrame(LabelFrame):
 
         
         # Dropdown menu for choosing the shape
-        self.shape_choice = StringVar(value="circle")  # Default value
-        self.shape_dropdown = OptionMenu(self.start_stop_frame, self.shape_choice, "circle", "infinity", "trajectory")
+        self.shape_choice = StringVar(value=get_shape_choice())  # Default value
+        self.shape_choice.trace_add("write", self.shape_choice_changed)
+
+        self.shape_dropdown = OptionMenu(self.start_stop_frame, self.shape_choice, "circle", "infinity", "trajectory") #, command=lambda: self.update_shape_choice(self.shape_choice.get()))
         self.shape_dropdown.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         self.difficulty_level = StringVar(value="easy")  # Default value
         self.difficulty_dropdown = OptionMenu(self.start_stop_frame, self.difficulty_level, "easy", "medium", "hard")
         self.difficulty_dropdown.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+
+        self.length_from_screen_label = Label(self.start_stop_frame, text="Length from screen (cm):")
+        self.length_from_screen_label.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+        self.length_from_screen = StringVar(value=get_length_from_screen())  # Default value
+        self.length_from_screen.trace_add("write", self.length_from_screen_changed)
+
+        self.length_dropdown = ttk.Combobox(
+            self.start_stop_frame, 
+            textvariable=self.length_from_screen,  # Bind to the StringVar
+            values=["60", "70", "80", "90", "100"],  # Predefined choices
+            state="normal",  # Allows manual text entry
+            width=5
+        )
+
+        self.length_dropdown.grid(row=2, column=4, padx=5, pady=5, sticky="w")
+        #self.length_dropdown.bind("<Return>", lambda event: self.length_from_screen_changed())  # Trigger update on Enter key
 
         # figures
         self.projected_angles = Figure()
@@ -123,8 +148,8 @@ class PlotFrame(LabelFrame):
         # self.ax_proj.add_patch(figure_of_eight_patch)
         #TODO: Virkar til að sýna trajectory en kemur öfugt
         script_dir = os.path.dirname(__file__)
-        file_x_path = os.path.join(script_dir, "trajectory_x.txt")
-        file_y_path = os.path.join(script_dir, "trajectory_y.txt")
+        file_x_path = os.path.join(script_dir, "adjusted_trajectory_x.txt")
+        file_y_path = os.path.join(script_dir, "adjusted_trajectory_y.txt")
         file_x = open(file_x_path, "r")
         trajectory_x = file_x.read().splitlines()
         self.trajectory_x = np.array(trajectory_x, dtype=float)
@@ -161,7 +186,30 @@ class PlotFrame(LabelFrame):
         self.focus_set()
         # ensure focus is given back to the frame 
         self.bind('<Visibility>', self.focus_set())
+        
+    def shape_choice_changed(self, *args):
+        """Trigger when the shape choice is updated."""
+        new_choice = self.shape_choice.get()
+        self.update_shape_choice(new_choice)
+
+    def update_shape_choice(self, choice):
+        """Update the shape choice globally."""
+        set_shape_choice(choice)  # Update global variable
+        print(f"Shape choice updated to: {choice}")  # Debugging print
+
+    def length_from_screen_changed(self, *args):
+        """Trigger when the length from screen is updated."""
+        new_choice = self.length_from_screen.get()
+        if new_choice.strip() == "":
+            return  # Ignore empty inputs
+        
+        self.update_length_from_screen(new_choice)
     
+    def update_length_from_screen(self, choice):
+        """Update the length from screen globally."""
+        set_length_from_screen(choice)
+        print(f"Length from screen updated to: {choice}")
+
     def on_sensor_disconnected(self, address):
         # need to remove all the buttons associated with connected and return to just connect
         pos = self.connected_sensor_positions[address]
@@ -264,7 +312,7 @@ class PlotFrame(LabelFrame):
     
     def set_max_yaw(self, yaw):
         self.max_yaw = yaw
-
+        
 #callbacks
     def update_stream_plot(self):
         colors = ["blue", "orange", "grey"]
@@ -281,6 +329,7 @@ class PlotFrame(LabelFrame):
         self.ax_proj.yaxis.set_ticks_position('left')
         self.ax_proj.autoscale(False)
         self.ax_proj.text(0.5, 1.1, 'Now follow the trajectory', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
+        self.ax_proj.axis('off')
         #Determine which shape to draw
         if self.shape_choice.get() == "circle":
             shape_x = self.circle_x
@@ -298,9 +347,14 @@ class PlotFrame(LabelFrame):
         if self.current_idx < len(shape_x):
             self.traced_x.append(shape_x[self.current_idx])
             self.traced_y.append(shape_y[self.current_idx])
+            self.projected_x.append(shape_x[self.current_idx])
+            self.projected_y.append(shape_y[self.current_idx])
+            print(f"projected_x: {shape_x[self.current_idx]}")
+            print(f"projected_y: {shape_y[self.current_idx]}")
             self.current_idx += 1
         else:
         # Reset the traced path to start the effect again (disappear and reform)
+
             self.traced_x = []
             self.traced_y = []
             self.current_idx = 0
@@ -311,8 +365,15 @@ class PlotFrame(LabelFrame):
         sensors_to_plot = self.s.manager.get_connected_sensors()
 
         for idx, s in enumerate(sensors_to_plot):
+            #TODO: projected_yaw er x og projected_pitch er y
             projected_yaw = s.get_projected_yaw()
             projected_pitch = s.get_projected_pitch()
+            #print(f"projected_yaw: {projected_yaw}")
+            #print(f"projected_pitch: {projected_pitch}")
+            self.real_x.append(projected_yaw)
+            self.real_y.append(projected_pitch)
+            #print(f"projected_yaw: {projected_yaw}")
+            #print(f"projected_pitch: {projected_pitch}")
             color = colors[idx]
             N = self.c.max_sensor_points_to_show
             if len(projected_pitch) > N:
@@ -445,7 +506,9 @@ class PlotFrame(LabelFrame):
     
     def start_plotting(self):
         self.console_frame.insert_text(f"start measuring  ..." + '\n\n')
-        #TODO: savea gögn áður en við eyðum þeim og includea í csv
+        #TODO: savea gögn áður en við eyðum þeim og includea í csv, ekki að virka með að kalla í self.export_to_csv() eins og það virki bara að kalla í það einu sinni og svo stoppi það að mæla
+        # export data that the sensor has collected
+        # self.export_to_csv()
         # Reset sensor data when measurement starts
         for s in self.s.manager.get_connected_sensors():
             s.clear_all_data()

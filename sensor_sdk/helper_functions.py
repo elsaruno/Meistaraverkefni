@@ -1,6 +1,7 @@
 from bleak import BleakScanner
 import numpy as np
 from sensor_sdk import data_classes as dc
+import os
 from os import chdir, mkdir,listdir,remove,getcwd, makedirs
 from os.path import splitext, isdir, exists
 import csv
@@ -8,6 +9,7 @@ import math
 import quaternionic
 from typing import Callable, Tuple, Union
 from classes.Config import SensorModel
+from sensor_sdk.shape_config import get_shape_choice
 
 ########################################################################
 # helper functions
@@ -65,31 +67,96 @@ def clamp(x: float, mx: float, mn: float) -> float:
 ExternalQuaternion = Tuple[float, float, float, float] # w,x,y,z
 Transform = Callable[[ExternalQuaternion], Tuple[float, float]]
 
-
 def create_transform(_q_rg: ExternalQuaternion, s: SensorModel) -> Transform:
     q_rg = quaternionic.array(_q_rg)
     beam_origin = s.p_beam
     beam_vec = s.v_beam
-    
-    plane_u = rotate_vec((s.window_width_physical / 2) * s.u_window, q_rg) # The "-" is to match the sensor's coordinate space
+
+    plane_u = rotate_vec((s.window_width_physical / 2) * s.u_window, q_rg)  # The "-" is to match the sensor's coordinate space
     plane_v = rotate_vec((s.window_height_physical / 2) * s.v_window, q_rg)
-    plane_o = rotate_vec(s.o_window, q_rg)   
+    plane_o = rotate_vec(s.o_window, q_rg)
 
     x_to_canvas = s.window_width_canvas
-    y_to_canvas = s.window_height_canvas 
+    y_to_canvas = s.window_height_canvas
+
+    first_point = [True]
+    first_x = [0]  # Stores the first detected x-coordinate
+    first_y = [0] # Stores the first detected y-coordinate
 
     def _transform(_q: ExternalQuaternion):
         q_tg = quaternionic.array(_q)
         v_tg = rotate_vec(beam_vec, q_tg)
         p_tg = rotate_vec(beam_origin, q_tg)
-        #TODO: Þetta er til að þvinga í 0,0, bæta x og y í export fileið 
+
+        # Compute intersection point
         p = line_plane_intersection(p_tg, v_tg, plane_o, plane_u, plane_v)
         if p is None:
-            return [0,0]
-        x = p[0]
-        y = p[1]
-        return x*x_to_canvas, y*y_to_canvas
+            return [0, 0]
+        shape_choice = get_shape_choice()
+        if shape_choice == "circle":
+            if first_point[0]:  # First point handling
+                first_point[0] = False
+                first_x[0] = p[0]  # Store first X coordinate
+                first_y[0] = p[1]  # Store first Y coordinate
+                y = (p[1] - first_y[0]) * y_to_canvas + 30
+                return 0, y  # Force first point to (0,30)
+
+            # Compute relative coordinates
+            x = (p[0] - first_x[0]) * x_to_canvas
+            y = (p[1] - first_y[0]) * y_to_canvas + 30  # Offset by 30
+        elif shape_choice == "infinity":
+            x = p[0] * x_to_canvas
+            y = p[1] * y_to_canvas
+        #TODO: Uppfæra upphafspunkt
+        elif shape_choice == "trajectory":
+            if first_point[0]:
+                first_point[0] = False
+                first_x[0] = p[0]
+                first_y[0] = p[1]
+                x = (p[0] - first_x[0]) * x_to_canvas + 0.025445839998053933
+                y = (p[1] - first_y[0]) * y_to_canvas - 29.30010212403218
+                return x, y 
+            
+            x = (p[0] - first_x[0]) * x_to_canvas + 0.025445839998053933
+            y = (p[1] - first_y[0]) * y_to_canvas - 29.30010212403218
+        else:
+            x = p[0] * x_to_canvas
+            y = p[1] * y_to_canvas
+
+        return x, y 
+
     return _transform
+
+# def create_transform(_q_rg: ExternalQuaternion, s: SensorModel) -> Transform:
+#     q_rg = quaternionic.array(_q_rg)
+#     beam_origin = s.p_beam
+#     beam_vec = s.v_beam
+    
+#     plane_u = rotate_vec((s.window_width_physical / 2) * s.u_window, q_rg) # The "-" is to match the sensor's coordinate space
+#     plane_v = rotate_vec((s.window_height_physical / 2) * s.v_window, q_rg)
+#     plane_o = rotate_vec(s.o_window, q_rg)   
+
+#     x_to_canvas = s.window_width_canvas
+#     y_to_canvas = s.window_height_canvas 
+    
+
+#     def _transform(_q: ExternalQuaternion):
+#         q_tg = quaternionic.array(_q)
+#         v_tg = rotate_vec(beam_vec, q_tg)
+#         p_tg = rotate_vec(beam_origin, q_tg)
+
+#         #TODO: Þetta er til að þvinga í 0,0, bæta x og y í export fileið 
+#         p = line_plane_intersection(p_tg, v_tg, plane_o, plane_u, plane_v)
+#         if p is None:
+#             return [0,0]
+#             # if PlotFrame.get_shape_choice() == "circle":
+#             #     return [0,30]
+#             # else:
+#             #     return [0,0]
+#         x = p[0]
+#         y = p[1]
+#         return x*x_to_canvas, y*y_to_canvas
+#     return _transform
 
 
 toDeg = 180 / math.pi
@@ -182,6 +249,7 @@ def write_data_to_csv(export_dir, csv_file_name, row_headers, data_to_write, lis
             writer = csv.writer(file)
             writer.writerow(row_headers)  # Write the header row
             for row in data_to_write:
+                print("row to write", row)
                 row_to_write = []
                 #custom payload 5 has 11 pieces + space_bar_presses
                 for d in range(11):

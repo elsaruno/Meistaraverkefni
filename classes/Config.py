@@ -1,5 +1,6 @@
 from typing import Literal, Tuple
 import numpy as np
+from classes.length_from_screen_config import get_length_from_screen
 
 def unit_vec(x: float, y: float, z: float) -> np.ndarray:
     vec = np.array([x,y,z])
@@ -13,6 +14,7 @@ def point(x: float, y: float, z: float) -> np.ndarray:
 
 def is_normalized(v: np.ndarray):
     return (np.linalg.norm(v) - 1) < 1e-5
+
 class SensorModel:
     def __init__(self, name: Literal['head', 'wrist', 'free', 'head-z-down']):
         print(f'Using "{name}" sensor model')
@@ -22,7 +24,9 @@ class SensorModel:
             self.o_global = point(0,0,0)
             self.p_beam = self.o_global
             self.v_beam = unit_vec(1,0,0)
-            self.o_window = self.p_beam + vector(25,0,0)
+            length_from_screen = get_length_from_screen()
+            print(f'length_from_screen: {length_from_screen}')
+            self.o_window = self.p_beam + vector(length_from_screen,0,0)
             self.u_window = unit_vec(0,-1,0)
             self.v_window = unit_vec(0,0,1)
 

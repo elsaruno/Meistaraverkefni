@@ -132,7 +132,7 @@ async def export_to_csv(sensor_manager, address):
     # exports data from a sensor to csv
     sensor = list(filter(lambda x: x.address == address, sensor_manager.connected_sensors))[0]
     data_to_write_to_csv = sensor.get_raw_data()
-    print(data_to_write_to_csv)
+    #print(data_to_write_to_csv)
     list_of_timestamps = sensor.get_space_press_timestamps()
     modified_address = address.replace(":", "_")
     now = int(datetime.timestamp(datetime.now()) * 1000)
