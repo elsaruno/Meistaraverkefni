@@ -1,4 +1,4 @@
-_global_length_from_screen = {"length_from_screen": 60}
+_global_length_from_screen = {"length_from_screen": 60} #default length from screen is 60
 
 def set_length_from_screen(choice: str):
     _global_length_from_screen["length_from_screen"] = int(choice)

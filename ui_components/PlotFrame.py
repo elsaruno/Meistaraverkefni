@@ -120,13 +120,7 @@ class PlotFrame(LabelFrame):
         self.ax_proj.autoscale(False)
         if self.timestamp_counter == 0:
             self.ax_proj.text(0.5, 1.1, 'Welcome, to begin connect the sensor and press start streaming button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
-        elif self.timestamp_counter == 1:
-            self.ax_proj.texts.clear()
-            self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
-        elif self.timestamp_counter == 2:
-            self.ax_proj.texts.clear()
-            self.ax_proj.text(0.5, 1.1, 'Now place the sensor and raise the hand as high as you can but not higher than 90°C and press start measuring', transform=self.ax_proj.transAxes, ha='center', fontsize=12)
-
+        
         # try and draw a circle
         self.circle_x = 30 * np.sin(np.linspace(0, 2 * np.pi, 100))
         self.circle_y = 30 * np.cos(np.linspace(0, 2 * np.pi, 100))
@@ -287,11 +281,11 @@ class PlotFrame(LabelFrame):
         self.ax_proj.yaxis.set_ticks_position('left')
         self.ax_proj.autoscale(False)
 
-        if self.timestamp_counter == 1:
-            self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button',
+        if self.timestamp_counter == 2:
+            self.ax_proj.text(0.5, 1.1, 'Now place the sensor and press mark timestamp button again',
                             transform=self.ax_proj.transAxes, ha='center', fontsize=12)
-        elif self.timestamp_counter == 2:
-            self.ax_proj.text(0.5, 1.1, 'Now place the sensor and raise the hand as high as you can but not higher than 90° and press start measuring',
+        elif self.timestamp_counter == 3:
+            self.ax_proj.text(0.5, 1.1, 'Now raise the hand as high as you can but not higher than 90° and press start measuring button',
                             transform=self.ax_proj.transAxes, ha='center', fontsize=12)
         # Redraw canvas
         self.projected_angles_canvas.draw()
@@ -478,10 +472,7 @@ class PlotFrame(LabelFrame):
         if self.timestamp_counter == 1:
             self.ax_proj.text(0.5, 1.1, 'Now let the sensor sit on the table for a few seconds and then press mark timestamp button',
                             transform=self.ax_proj.transAxes, ha='center', fontsize=12)
-        elif self.timestamp_counter == 2:
-            self.ax_proj.text(0.5, 1.1, 'Now place the sensor and raise the hand as high as you can but not higher than 90° and press start measuring',
-                            transform=self.ax_proj.transAxes, ha='center', fontsize=12)
-
+        
         self.projected_angles_canvas.draw()
         #print(f"start measuring for sensor {address}")
         if len(self.connected_sensor_actions) == 0:
@@ -491,13 +482,9 @@ class PlotFrame(LabelFrame):
             print("placed:", all_sensors_are_placed)
 
         if all_sensors_are_placed:
-            #self.ax.clear()
-            #self.ax_2d.clear()
-            #start_measuring_all
             self.s.manager.send_message("start_measuring_all", {})
             self.console_frame.clear_console()
             self.console_frame.insert_text(f"start streaming ..." + '\n\n') 
-            #self.update_stream_plot()
         else:
             if len(self.connected_sensor_actions) == 0:
                 messagebox.showinfo("Alert", "There are no connected sensors")
