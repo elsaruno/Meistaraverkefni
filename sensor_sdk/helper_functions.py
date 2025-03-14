@@ -9,7 +9,7 @@ import math
 import quaternionic
 from typing import Callable, Tuple, Union
 from classes.Config import SensorModel
-from sensor_sdk.shape_config import get_shape_choice
+from sensor_sdk.shape_config import get_shape_choice, get_start_measuring
 
 ########################################################################
 # helper functions
@@ -93,32 +93,56 @@ def create_transform(_q_rg: ExternalQuaternion, s: SensorModel) -> Transform:
         if p is None:
             return [0, 0]
         shape_choice = get_shape_choice()
+        start_measuring = get_start_measuring()
         if shape_choice == "circle":
-            if first_point[0]:  # First point handling
+            if start_measuring == True and first_point[0] == True:  # First point handling
                 first_point[0] = False
                 first_x[0] = p[0]  # Store first X coordinate
                 first_y[0] = p[1]  # Store first Y coordinate
                 y = (p[1] - first_y[0]) * y_to_canvas + 30
                 return 0, y  # Force first point to (0,30)
-
+            elif first_point[0] == False and start_measuring == True:  # If first point has been detected
+                x = (p[0] - first_x[0]) * x_to_canvas
+                y = (p[1] - first_y[0]) * y_to_canvas + 30  # Offset by 30
+                return x, y
             # Compute relative coordinates
-            x = (p[0] - first_x[0]) * x_to_canvas
-            y = (p[1] - first_y[0]) * y_to_canvas + 30  # Offset by 30
+            #x = (p[0] - first_x[0]) * x_to_canvas
+            #y = (p[1] - first_y[0]) * y_to_canvas + 30  # Offset by 30
+            x = None
+            y = None
         elif shape_choice == "infinity":
-            x = p[0] * x_to_canvas
-            y = p[1] * y_to_canvas
-        #TODO: Uppfæra upphafspunkt
+            # x = p[0] * x_to_canvas
+            # y = p[1] * y_to_canvas
+            if start_measuring == True and first_point[0] == True:  # First point handling
+                first_point[0] = False
+                first_x[0] = p[0]  # Store first X coordinate
+                first_y[0] = p[1]  # Store first Y coordinate
+                x = (p[0] - first_x[0]) * x_to_canvas
+                y = (p[1] - first_y[0]) * y_to_canvas
+                return 0, 0  # Force first point to (0,30)
+            elif first_point[0] == False and start_measuring == True:  # If first point has been detected
+                x = (p[0] - first_x[0]) * x_to_canvas
+                y = (p[1] - first_y[0]) * y_to_canvas
+                return x, y
+            x = None
+            y = None
         elif shape_choice == "trajectory":
-            if first_point[0]:
+            if first_point[0] == True and start_measuring == True:
                 first_point[0] = False
                 first_x[0] = p[0]
                 first_y[0] = p[1]
                 x = (p[0] - first_x[0]) * x_to_canvas + 0.025445839998053933
                 y = (p[1] - first_y[0]) * y_to_canvas - 29.30010212403218
                 return x, y 
+            elif first_point[0] == False and start_measuring == True:
+                x = (p[0] - first_x[0]) * x_to_canvas + 0.025445839998053933
+                y = (p[1] - first_y[0]) * y_to_canvas - 29.30010212403218
+                return x, y
             
-            x = (p[0] - first_x[0]) * x_to_canvas + 0.025445839998053933
-            y = (p[1] - first_y[0]) * y_to_canvas - 29.30010212403218
+            # x = (p[0] - first_x[0]) * x_to_canvas + 0.025445839998053933
+            # y = (p[1] - first_y[0]) * y_to_canvas - 29.30010212403218
+            x = None
+            y = None
         else:
             x = p[0] * x_to_canvas
             y = p[1] * y_to_canvas
@@ -249,7 +273,7 @@ def write_data_to_csv(export_dir, csv_file_name, row_headers, data_to_write, lis
             writer = csv.writer(file)
             writer.writerow(row_headers)  # Write the header row
             for row in data_to_write:
-                print("row to write", row)
+                #print("row to write", row)
                 row_to_write = []
                 #custom payload 5 has 11 pieces + space_bar_presses
                 for d in range(11):

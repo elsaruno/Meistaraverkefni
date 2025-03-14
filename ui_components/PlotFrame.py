@@ -12,7 +12,7 @@ from ui_components import assign_sensor_window as asw
 import logging
 import os
 import importlib
-from sensor_sdk.shape_config import set_shape_choice, get_shape_choice
+from sensor_sdk.shape_config import set_shape_choice, get_shape_choice, set_start_measuring_true
 from classes.length_from_screen_config import set_length_from_screen, get_length_from_screen
 
 # Configure logging
@@ -347,8 +347,11 @@ class PlotFrame(LabelFrame):
             print(f"projected_y: {shape_y[self.current_idx]}")
             self.current_idx += 1
         else:
+            if self.shape_choice.get() == "trajectory":
+                self.traced_x = self.trajectory_x[0]
+                self.traced_y = self.trajectory_y[0]
+                self.current_idx = 0
         # Reset the traced path to start the effect again (disappear and reform)
-
             self.traced_x = []
             self.traced_y = []
             self.current_idx = 0
@@ -495,10 +498,21 @@ class PlotFrame(LabelFrame):
         self.console_frame.insert_text(f"start measuring  ..." + '\n\n')
         #TODO: savea gögn áður en við eyðum þeim og includea í csv, ekki að virka með að kalla í self.export_to_csv() eins og það virki bara að kalla í það einu sinni og svo stoppi það að mæla
         # export data that the sensor has collected
-        # self.export_to_csv()
-        # Reset sensor data when measurement starts
-        for s in self.s.manager.get_connected_sensors():
-            s.clear_all_data()
+        self.s.manager.send_message("timestamp_button_pressed", {})
+        self.console_frame.insert_text(f"timestamp saved ..." + '\n\n')
+        set_start_measuring_true()
+
+        #self.backup_data = {s.get_address(): s.get_raw_data() for s in self.s.manager.get_connected_sensors()}
+        # self.backup_data = {}
+        # for s in self.s.manager.get_connected_sensors():
+        #     address = s.get_address()
+        #     raw_data = s.get_raw_data()
+        #     self.backup_data[address] = raw_data
+        #     #print(f"backup data for {address}: {raw_data}")
+        # #self.export_to_csv()
+        # # Reset sensor data when measurement starts
+        # for s in self.s.manager.get_connected_sensors():
+        #     s.clear_all_data()
         self.update_stream_plot()
     
     def stop_measuring_for_sensors(self):
@@ -512,13 +526,37 @@ class PlotFrame(LabelFrame):
         self.export_button.grid(row=1, column=7)
         
     def export_to_csv(self):
-        #self.console_frame.clear_console()
+        self.console_frame.clear_console()
         print(f"export to csv: dummy function")
         for s in self.s.manager.get_connected_sensors():
             address = s.get_address()
             self.s.manager.send_message("export", address, data=self.list_of_timestamps )
             self.console_frame.insert_text(f"writing sensor {address} data to csv ..." + '\n\n') 
+        # print(f"backup data: {self.backup_data.items()}")
+        # print (f"list of timestamps: {self.list_of_timestamps}")
+        # all_data = {}
         
+        # for address, data in self.backup_data.items():
+        #     if address not in all_data:
+        #         all_data[address] = []
+        #     all_data[address].extend(data)
+        # #print(f"all data: {all_data}")
+        
+        # # for address in all_data.keys():
+        # #     all_data[address].append(["Timestamps"] + self.list_of_timestamps)  # Ensure timestamps are separate
+
+        
+        # for s in self.s.manager.get_connected_sensors():
+        #     address = s.get_address()
+        #     current_data = self.list_of_timestamps
+        #     if address not in all_data:
+        #         all_data[address] = []
+        #     all_data[address].extend(current_data)
+        
+        # for address, data in all_data.items():
+        #     self.s.manager.send_message("export", address, data=data)
+        #     self.console_frame.insert_text(f"writing sensor {address} data to csv ..." + '\n\n')
+
     def export_to_csv_done_callback(self, address):
         print(f"export for {address} done")
        
